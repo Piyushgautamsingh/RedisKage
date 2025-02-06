@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rediskage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rediskage
+  template:
+    metadata:
+      labels:
+        app: rediskage
+    spec:
+      containers:
+        - name: redis-cluster
+          image: bitnami/redis-cluster:7.2.5-debian-12-r4
+          command:
+            - /bin/bash
+            - '-c'
+          args:
+            - >
+              cp /rediskage/scripts/rediskage-cluster-healer.sh /rediskage/cluster-healer/rediskage-cluster-healer.sh &&
+              chmod +x /rediskage/cluster-healer/rediskage-cluster-healer.sh &&
+              while true; do
+                /rediskage/cluster-healer/rediskage-cluster-healer.sh;
+                sleep 60;
+              done
+          env:
+            - name: END_POD_NUMBER
+              value: "5"
+            - name: REDIS_PORT_NUMBER
+              value: "6379"
+            - name: REDIS_PASSWORD
+              value: ""
+            - name: REDIS_CLIENT_KEY
+              value: ""
+            - name: REDIS_CLIENT_CERT
+              value: ""
+            - name: REDIS_CA_CERT
+              value: ""
+            - name: REDIS_CLI_RETRIES
+              value: "30"
+            - name: REDIS_CLI_TIMEOUT
+              value: "30"
+            - name: REDIS_TLS_ENABLED
+              value: "yes"
+          volumeMounts:
+            - name: rediskage-cluster-healer-scripts
+              mountPath: /rediskage/scripts
+              subpath: /scripts
+              readOnly: true
+            - name: redis-cluster-rediskage
+              mountPath: /rediskage/cluster-healer
+              subpath: /cluster-healer
+      volumes:
+        - name: rediskage-cluster-healer-scripts
+          configMap:
+            name: rediskage-cluster-healer
+        - name: rediskage-cluster-healer
+          emptyDir: {}
+      serviceAccountName: default
