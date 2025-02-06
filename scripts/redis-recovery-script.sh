@@ -17,7 +17,7 @@ REDIS_CLIENT_KEY=${REDIS_CLIENT_KEY:-""}  # Path to client key
 # Colors and Symbols
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-BLUE='\033[0;34m'
+#BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 CHECK_MARK="✅"
@@ -26,7 +26,7 @@ INFO="ℹ️"
 
 # Logging functions
 log() {
-    echo -e "${BLUE}${INFO} $(date '+%Y-%m-%d %H:%M:%S') - INFO: $1${NC}"
+    echo -e "${NC}${INFO} $(date '+%Y-%m-%d %H:%M:%S') - INFO: $1${NC}"
 }
 
 log_success() {
@@ -197,7 +197,7 @@ assign_replicas() {
     log "Masters without replicas: ${masters_without_replicas[*]}"
   
     if [[ ${#masters_without_slots[@]} -eq 0 || ${#masters_without_replicas[@]} -eq 0 ]]; then
-        log_warning "No available masters without slots or no masters without replicas to assign."
+        log_success "No available masters without slots or no masters without replicas to assign."
         return 1
     fi
 
@@ -255,19 +255,23 @@ R::::::R     R:::::RE::::::::::::::::::::ED:::::::::::::::DD I::::::::IS::::::SS
 R::::::R     R:::::RE::::::::::::::::::::ED::::::::::::DDD   I::::::::IS:::::::::::::::SS K:::::::K    K:::::K A:::::A                 A:::::A GGG::::::GGG:::GE::::::::::::::::::::E
 RRRRRRRR     RRRRRRREEEEEEEEEEEEEEEEEEEEEEDDDDDDDDDDDDD      IIIIIIIIII SSSSSSSSSSSSSSS   KKKKKKKKK    KKKKKKKAAAAAAA                   AAAAAAA   GGGGGG   GGGGEEEEEEEEEEEEEEEEEEEEEE                                                                                                                       
                                                                                                             
-                                                                                                                              by Piyush Gautam"
-log "Starting Redis cluster maintenance..."
+                                                                                                                              Maintainer: Piyush Gautam"
 
-remove_failed_nodes
-clean_status=$?
+while true; do
+       log "Starting Redis cluster maintenance..."
 
-find_new_pods_ips
-find_new_pods_ips_status=$?
+       remove_failed_nodes
+       clean_status=$?
 
-if [ $find_new_pods_ips_status -eq 0 ]; then
-    add_new_pods_to_cluster
-    sleep 15
-fi
+       find_new_pods_ips
+       find_new_pods_ips_status=$?
 
-assign_replicas
-log_success "Redis cluster maintenance completed."
+       if [ $find_new_pods_ips_status -eq 0 ]; then
+       add_new_pods_to_cluster
+       sleep 15
+       fi
+
+       assign_replicas
+       log_success "Redis cluster maintenance completed."
+       sleep $RESIS_RECOVERY_SCRIPT_INTERVEL;
+done

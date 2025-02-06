@@ -22,10 +22,7 @@ spec:
             - >
               cp /rediskage/scripts/rediskage-cluster-healer.sh /rediskage/cluster-healer/rediskage-cluster-healer.sh &&
               chmod +x /rediskage/cluster-healer/rediskage-cluster-healer.sh &&
-              while true; do
-                /rediskage/cluster-healer/rediskage-cluster-healer.sh;
-                sleep 60;
-              done
+              /rediskage/cluster-healer/rediskage-cluster-healer.sh;
           env:
             - name: END_POD_NUMBER
               value: "5"
@@ -45,6 +42,8 @@ spec:
               value: "30"
             - name: REDIS_TLS_ENABLED
               value: "yes"
+            - name: RESIS_RECOVERY_SCRIPT_INTERVEL
+              value: "60"
           volumeMounts:
             - name: rediskage-cluster-healer-scripts
               mountPath: /rediskage/scripts
