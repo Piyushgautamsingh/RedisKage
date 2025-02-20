@@ -1,0 +1,38 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rediskage-to-redis-cluster
+spec:
+  egress:
+    - ports:
+        - port: 6379
+      to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: redis-cluster
+              app.kubernetes.io/name: redis-cluster
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: rediskage
+  policyTypes:
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: from-rediskage-to-redis-cluster
+spec:
+  ingress:
+    - ports:
+        - port: 6379
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: rediskage
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: redis-cluster
+      app.kubernetes.io/name: redis-cluster
+  policyTypes:
+    - Ingress

@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chart.name" . }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.rediskage.replica | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "chart.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: rediskage
+          image: "{{ .Values.rediskage.image.repository }}:{{ .Values.rediskage.image.tag }}"
+          imagePullPolicy: {{ .Values.rediskage.image.pullPolicy }}
+          env:
+            - name: PATTERN
+              value: "{{ .Values.rediskage.env.pattern | default "default-pattern" }}"
+            - name: BACKUP_DIR
+              value: {{ .Values.rediskage.env.backup_dir | default "/rediskage/backup" | quote }}
+            - name: S3_ENDPOINT_URL
+              value: "{{ .Values.rediskage.env.s3_endpoint_url }}"
+            - name: S3_ENDPOINT_NAME
+              value: "{{ .Values.rediskage.env.s3_endpoint_name }}"
+            - name: SCHEDULE_TIME
+              value: "{{ .Values.rediskage.env.schedule_time }}"
+            - name: REDIS_NODES
+              value: ""
+            - name: REDIS_PASSWORD
+              value: ""
+            - name: REDIS_NAMESPACE
+              value: ""
+            - name: REDIS_POD_NAME
+              value: ""
+            - name: REDIS_CONTAINER_NAME
+              value: ""
+            - name: NODECONF_FILE_PATH
+              value: {{ .Values.rediskage.env.nodeconf_file_path }}
+            - name: CA_CERT
+              value: {{ .Values.rediskage.env.cacert }}
+            - name: TLS_CERT
+              value: {{ .Values.rediskage.env.tls_crt }}
+            - name: TLS_KEY
+              value: {{ .Values.rediskage.env.tls_key }}
+            - name: AWS_ACCESS_KEY_ID
+              value: ""
+            - name: AWS_SECRET_ACCESS_KEY
+              value: ""
+            - name: KUBECONFIG
+              value: {{ .Values.rediskage.env.kubeconfig }}
+          resources:
+            {{- toYaml .Values.rediskage.resources | nindent 12 }}
+        - name: redis-cluster-healer
+          image: "{{ .Values.rediskage.redis_cluster_healer.image.repository }}:{{ .Values.rediskage.redis_cluster_healer.image.tag }}"
+          imagePullPolicy: {{ .Values.rediskage.redis_cluster_healer.image.pullPolicy }}
+          env:
+            - name: REDIS_PORT_NUMBER
+              value: "{{ .Values.rediskage.redis_cluster_healer.env.port_numner | default "6379" }}"
+            - name: END_POD_NUMBER
+              value: "{{ .Values.rediskage.redis_cluster_healer.env.end_pod | default "5" }}"
+            - name: REDIS_PASSWORD
+              value: "{{ .Values.rediskage.redis_cluster_healer.env.password }}"
+            - name: REDIS_TLS_ENABLED
+              value: "{{ .Values.rediskage.redis_cluster_healer.env.tls | default "yes"}}"
+            - name: REDIS_CA_CERT
+              value: "{{ .Values.rediskage.redis_cluster_healer.env.cacert }}"
+            - name: REDIS_CLIENT_CERT
+              value: "{{ .Values.rediskage.redis_cluster_healer.env.tls_crt }}"
+            - name: REDIS_CLIENT_KEY
+              value: "{{ .Values.rediskage.redis_cluster_healer.env.tls_key }}"
+            - name: RESIS_RECOVERY_SCRIPT_INTERVEL
+              value: "{{ .Values.rediskage.redis_cluster_healer.env.recovery_intervel }}"
+            - name: REDIS_ADDRS
+              value: "{{.Values.rediskage.redis_cluster_healer.env.redis_host}}"
+            - name: REDIS_HEADLESS_ADDRS
+              value: "{{.Values.rediskage.redis_cluster_healer.env.redis_host}}"
+          resources:
+            {{- toYaml .Values.rediskage.redis_cluster_healer.resources | nindent 12 }}
