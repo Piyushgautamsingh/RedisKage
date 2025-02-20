@@ -26,13 +26,16 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git fetch --tags
-          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          
+          # Determine the latest tag and calculate the next version
+          latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1) 2>/dev/null)
           if [ -z "$latest_tag" ]; then
             next_version="v1.0.0"
           else
             next_version=$(echo $latest_tag | awk -F. '{$NF+=1; OFS="."; print $0}')
           fi
           echo "Next Version: $next_version"
+
           git tag -a "$next_version" -m "Release $next_version"
           git push origin "$next_version"
 
