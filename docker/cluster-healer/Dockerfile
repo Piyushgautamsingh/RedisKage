@@ -2,7 +2,14 @@ FROM docker.io/bitnami/redis-cluster:7.4-debian-12 as base
 
 FROM debian:bookworm-slim
 
-LABEL maintainer="Piyush Gautam"
+LABEL maintainer="Piyush Gautam" \
+      org.opencontainers.image.name="Cluster Healer" \
+      org.opencontainers.image.description="Cluster Healer detects and resolves node failures, manages new pods, and ensures cluster stability." \
+      org.opencontainers.image.version="$VERSION" \
+      org.opencontainers.image.created="$BUILD_DATE" \
+      org.opencontainers.image.source="https://github.com/piyushgautamsingh/rediskage" \
+      org.opencontainers.image.licenses="MIT"
+
 
 COPY --from=base /opt/bitnami/scripts/ /opt/bitnami/scripts/
 COPY --from=base /opt/bitnami/redis/bin/redis-cli /opt/bitnami/redis/bin/redis-cli
@@ -44,5 +51,4 @@ RUN chmod +x /rediskage/scripts/*.sh && \
 
 USER rediskage
 
-# ENTRYPOINT ["/bin/bash", "-c", "/rediskage/scripts/redis-cluster-healer.sh"]
-ENTRYPOINT ["python3", "/rediskage/scripts/key-backup.py"]
+ENTRYPOINT ["/bin/bash", "-c", "/rediskage/scripts/redis-cluster-healer.sh"]
