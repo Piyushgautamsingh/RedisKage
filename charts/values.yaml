@@ -1,0 +1,48 @@
+rediskage:
+  replica: 1
+  image:
+    repository: "docker.io/singhpiyushgautam/rediskage"
+    tag: "v1.0.0"
+    pullPolicy: IfNotPresent
+  env:
+    pattern: "tyk-admin-api*"
+    backup_dir: "/rediskage/backup"
+    s3_endpoint_url: ""
+    s3_endpoint_name: ""
+    redis_node: ""
+    schedule_time: "30"
+    nodeconf_file_path: "/bitnami/redis/data/nodes.conf"
+    cacert: "/var/lib/rediskage/config/certs/ca.crt"
+    tls_crt: "/var/lib/rediskage/config/certs/tls.crt"
+    tls_key: "/var/lib/rediskage/config/certs/tls.key"
+    kubeconfig: "/var/lib/rediskage/config/kubeconfig"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  redis_cluster_healer:
+    image:
+      repository: "docker.io/singhpiyushgautam/cluster-healer"
+      tag: "v1.0.0"
+      pullPolicy: IfNotPresent
+    env:
+      port_numner: 6379
+      tls: "yes"
+      end_pod: 5
+      password: ""
+      cacert: "/var/lib/rediskage/config/certs/ca.crt"
+      tls_crt: "/var/lib/rediskage/config/certs/tls.crt"
+      tls_key: "/var/lib/rediskage/config/certs/tls.key"
+      recovery_intervel: "60"
+      redis_host: redis-cluster
+      redis_headless_svc_host: redis-cluster-headless
+    resources:
+      limits:
+        cpu: 200m
+        memory: 250Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi

@@ -1,18 +1,17 @@
 #!/bin/bash
 
-# Exit on error (optional, uncomment if needed)
-# set -e
-
-# Configuration
+# Enviroment Variable
 REDIS_PORT_NUMBER=${REDIS_PORT_NUMBER:-6379}
 END_POD_NUMBER=${END_POD_NUMBER:-5}
 REDIS_CLI_TIMEOUT=${REDIS_CLI_TIMEOUT:-30}
 REDIS_CLI_RETRIES=${REDIS_CLI_RETRIES:-3}
-REDIS_PASSWORD=${REDIS_PASSWORD:-""}  # Set your Redis password here
-REDIS_TLS_ENABLED=${REDIS_TLS_ENABLED:-"yes"}  # Set to "yes" to enable TLS
-REDIS_CA_CERT=${REDIS_CA_CERT:-""}  # Path to CA certificate
-REDIS_CLIENT_CERT=${REDIS_CLIENT_CERT:-""}  # Path to client certificate
-REDIS_CLIENT_KEY=${REDIS_CLIENT_KEY:-""}  # Path to client key
+REDIS_PASSWORD=${REDIS_PASSWORD:-""}
+REDIS_TLS_ENABLED=${REDIS_TLS_ENABLED:-"yes"}
+REDIS_CA_CERT=${REDIS_CA_CERT:-""}
+REDIS_CLIENT_CERT=${REDIS_CLIENT_CERT:-""}
+REDIS_CLIENT_KEY=${REDIS_CLIENT_KEY:-""}
+REDIS_HOST_ADDRS=${REDIS_HOST_ADDRS:-"redis-cluster"}
+REDIS_HEADLESS_SVC_ADDRS=${REDIS_HEADLESS_SVC_ADDRS:-"redis-cluster-headless"}
 
 # Colors and Symbols
 RED='\033[0;31m'
@@ -71,7 +70,7 @@ redis_cli_safe() {
 # Remove failed nodes from the cluster
 remove_failed_nodes() {
     log "Checking for failed nodes in the cluster..."
-    failed_nodes=$(redis_cli_safe -h redis-cluster -p $REDIS_PORT_NUMBER CLUSTER NODES | grep fail | awk '{print $1}' | tr '\n' ' ')
+    failed_nodes=$(redis_cli_safe -h $REDIS_HOST_ADDRS -p $REDIS_PORT_NUMBER CLUSTER NODES | grep fail | awk '{print $1}' | tr '\n' ' ')
 
     if [ -z "$failed_nodes" ]; then
         log_success "No failed nodes found in the cluster."
@@ -85,7 +84,7 @@ remove_failed_nodes() {
     for failed_node in $failed_nodes; do
         for ((i=0; i<=$END_POD_NUMBER; i++)); do
             log "Attempting to remove failed node $failed_node from redis-cluster-$i..."
-            if redis_cli_safe -h redis-cluster-$i.redis-cluster-headless -p $REDIS_PORT_NUMBER CLUSTER FORGET $failed_node; then
+            if redis_cli_safe -h $REDIS_HOST_ADDRS-$i.$REDIS_HEADLESS_SVC_ADDRS -p $REDIS_PORT_NUMBER CLUSTER FORGET $failed_node; then
                 log_success "Node $failed_node successfully removed from redis-cluster-$i."
             else
                 log_error "Failed to remove node $failed_node from redis-cluster-$i."
@@ -98,7 +97,7 @@ remove_failed_nodes() {
 
 # Find unique IPs of Redis pods
 find_unique_ips() {
-    unique_ips=$(getent ahosts redis-cluster-headless | awk '{print $1}' | sort | uniq | tr '\n' ' ')
+    unique_ips=$(getent ahosts $REDIS_HEADLESS_SVC_ADDRS | awk '{print $1}' | sort | uniq | tr '\n' ' ')
     log "Unique IPs of all Redis pods: ${unique_ips}"
 }
 
@@ -106,7 +105,7 @@ find_unique_ips() {
 find_new_pods_ips() {
     find_unique_ips
     
-    ip_addresses=$(redis_cli_safe -h redis-cluster -p $REDIS_PORT_NUMBER CLUSTER NODES | awk '{split($2, a, ":"); print a[1]}' | tr '\n' ' ')      
+    ip_addresses=$(redis_cli_safe -h $REDIS_HOST_ADDRS -p $REDIS_PORT_NUMBER CLUSTER NODES | awk '{split($2, a, ":"); print a[1]}' | tr '\n' ' ')      
     log "IP addresses of all nodes in the cluster: ${ip_addresses}"
     
     unique_ips_array=($unique_ips)
@@ -141,7 +140,7 @@ find_new_pods_ips() {
 add_new_pods_to_cluster() {
     for new_pod_ip in "${new_pods_ips[@]}"; do
         log "Adding new pod $new_pod_ip to the cluster..."
-        if redis_cli_safe -h redis-cluster -p $REDIS_PORT_NUMBER CLUSTER MEET $new_pod_ip $REDIS_PORT_NUMBER; then
+        if redis_cli_safe -h $REDIS_HOST_ADDRS -p $REDIS_PORT_NUMBER CLUSTER MEET $new_pod_ip $REDIS_PORT_NUMBER; then
             log_success "Node $new_pod_ip successfully added to the cluster."
         else
             log_error "Failed to add node $new_pod_ip to the cluster."
@@ -156,7 +155,7 @@ get_masters_info() {
     local -n masters_without_replicas_ref=$3
     local redis_cluster_info
     
-    redis_cluster_info=$(redis_cli_safe -h redis-cluster -p $REDIS_PORT_NUMBER CLUSTER NODES)
+    redis_cluster_info=$(redis_cli_safe -h $REDIS_HOST_ADDRS -p $REDIS_PORT_NUMBER CLUSTER NODES)
 
     while IFS= read -r node; do
         node_id=$(echo $node | awk '{print $1}')
@@ -171,7 +170,7 @@ get_masters_info() {
             else
                 masters_with_slots_ref+=("$node_id")
                 
-                replicas=$(redis_cli_safe -h redis-cluster-0.redis-cluster-headless -p $REDIS_PORT_NUMBER CLUSTER REPLICAS $node_id)
+                replicas=$(redis_cli_safe -h $REDIS_HOST_ADDRS-0.$REDIS_HEADLESS_SVC_ADDRS -p $REDIS_PORT_NUMBER CLUSTER REPLICAS $node_id)
                 if [ -z "$replicas" ]; then
                     log_warning "Master $node_id has assigned slots but no replicas."
                     masters_without_replicas_ref+=("$node_id")
@@ -201,7 +200,7 @@ assign_replicas() {
         return 1
     fi
 
-    redis_cluster_info=$(redis_cli_safe -h redis-cluster -p "$REDIS_PORT_NUMBER" CLUSTER NODES)
+    redis_cluster_info=$(redis_cli_safe -h $REDIS_HOST_ADDRS -p "$REDIS_PORT_NUMBER" CLUSTER NODES)
 
     for master_id in "${masters_without_replicas[@]}"; do
         for replica_candidate_id in "${masters_without_slots[@]}"; do
@@ -231,31 +230,14 @@ assign_replicas() {
     done
   
     sleep 15  # Wait for cluster state to stabilize
-    log "Redis cluster info after update: \n$(redis_cli_safe -h redis-cluster -p "$REDIS_PORT_NUMBER" CLUSTER NODES)"
+    log "Redis cluster info after update: \n$(redis_cli_safe -h $REDIS_HOST_ADDRS -p "$REDIS_PORT_NUMBER" CLUSTER NODES)"
 
     return 0
 }
 
 # Main script execution
-log "                                                                                                                                                                                   
-RRRRRRRRRRRRRRRRR   EEEEEEEEEEEEEEEEEEEEEEDDDDDDDDDDDDD      IIIIIIIIII   SSSSSSSSSSSSSSS KKKKKKKKK    KKKKKKK               AAA                  GGGGGGGGGGGGGEEEEEEEEEEEEEEEEEEEEEE
-R::::::::::::::::R  E::::::::::::::::::::ED::::::::::::DDD   I::::::::I SS:::::::::::::::SK:::::::K    K:::::K              A:::A              GGG::::::::::::GE::::::::::::::::::::E
-R::::::RRRRRR:::::R E::::::::::::::::::::ED:::::::::::::::DD I::::::::IS:::::SSSSSS::::::SK:::::::K    K:::::K             A:::::A           GG:::::::::::::::GE::::::::::::::::::::E
-RR:::::R     R:::::REE::::::EEEEEEEEE::::EDDD:::::DDDDD:::::DII::::::IIS:::::S     SSSSSSSK:::::::K   K::::::K            A:::::::A         G:::::GGGGGGGG::::GEE::::::EEEEEEEEE::::E
-  R::::R     R:::::R  E:::::E       EEEEEE  D:::::D    D:::::D I::::I  S:::::S            KK::::::K  K:::::KKK           A:::::::::A       G:::::G       GGGGGG  E:::::E       EEEEEE
-  R::::R     R:::::R  E:::::E               D:::::D     D:::::DI::::I  S:::::S              K:::::K K:::::K             A:::::A:::::A     G:::::G                E:::::E             
-  R::::RRRRRR:::::R   E::::::EEEEEEEEEE     D:::::D     D:::::DI::::I   S::::SSSS           K::::::K:::::K             A:::::A A:::::A    G:::::G                E::::::EEEEEEEEEE   
-  R:::::::::::::RR    E:::::::::::::::E     D:::::D     D:::::DI::::I    SS::::::SSSSS      K:::::::::::K             A:::::A   A:::::A   G:::::G    GGGGGGGGGG  E:::::::::::::::E   
-  R::::RRRRRR:::::R   E:::::::::::::::E     D:::::D     D:::::DI::::I      SSS::::::::SS    K:::::::::::K            A:::::A     A:::::A  G:::::G    G::::::::G  E:::::::::::::::E   
-  R::::R     R:::::R  E::::::EEEEEEEEEE     D:::::D     D:::::DI::::I         SSSSSS::::S   K::::::K:::::K          A:::::AAAAAAAAA:::::A G:::::G    GGGGG::::G  E::::::EEEEEEEEEE   
-  R::::R     R:::::R  E:::::E               D:::::D     D:::::DI::::I              S:::::S  K:::::K K:::::K        A:::::::::::::::::::::AG:::::G        G::::G  E:::::E             
-  R::::R     R:::::R  E:::::E       EEEEEE  D:::::D    D:::::D I::::I              S:::::SKK::::::K  K:::::KKK    A:::::AAAAAAAAAAAAA:::::AG:::::G       G::::G  E:::::E       EEEEEE
-RR:::::R     R:::::REE::::::EEEEEEEE:::::EDDD:::::DDDDD:::::DII::::::IISSSSSSS     S:::::SK:::::::K   K::::::K   A:::::A             A:::::AG:::::GGGGGGGG::::GEE::::::EEEEEEEE:::::E
-R::::::R     R:::::RE::::::::::::::::::::ED:::::::::::::::DD I::::::::IS::::::SSSSSS:::::SK:::::::K    K:::::K  A:::::A               A:::::AGG:::::::::::::::GE::::::::::::::::::::E
-R::::::R     R:::::RE::::::::::::::::::::ED::::::::::::DDD   I::::::::IS:::::::::::::::SS K:::::::K    K:::::K A:::::A                 A:::::A GGG::::::GGG:::GE::::::::::::::::::::E
-RRRRRRRR     RRRRRRREEEEEEEEEEEEEEEEEEEEEEDDDDDDDDDDDDD      IIIIIIIIII SSSSSSSSSSSSSSS   KKKKKKKKK    KKKKKKKAAAAAAA                   AAAAAAA   GGGGGG   GGGGEEEEEEEEEEEEEEEEEEEEEE                                                                                                                       
-                                                                                                            
-                                                                                                                              Maintainer: Piyush Gautam"
+toilet -f doh -F metal "REDISKAGE"
+echo -e "https://github.com/Piyushgautamsingh/RedisKage"
 
 while true; do
        log "Starting Redis cluster maintenance..."
