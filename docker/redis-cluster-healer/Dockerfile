@@ -1,22 +1,25 @@
-FROM docker.io/bitnami/redis-cluster:7.4-debian-12 as base
+FROM docker.io/bitnami/redis-cluster:7.4-debian-12 AS base
 
 FROM debian:bookworm-slim
 
+ARG VERSION
+ARG BUILD_DATE
+
 LABEL maintainer="Piyush Gautam" \
-      org.opencontainers.image.name="Cluster Healer" \
-      org.opencontainers.image.description="Cluster Healer detects and resolves node failures, manages new pods, and ensures cluster stability." \
+      org.opencontainers.image.name="Redis Cluster Healer" \
+      org.opencontainers.image.description="Redis Cluster Healer detects and resolves node failures, manages new pods, and ensures cluster stability." \
       org.opencontainers.image.version="$VERSION" \
       org.opencontainers.image.created="$BUILD_DATE" \
       org.opencontainers.image.source="https://github.com/piyushgautamsingh/rediskage" \
       org.opencontainers.image.licenses="MIT"
-
 
 COPY --from=base /opt/bitnami/scripts/ /opt/bitnami/scripts/
 COPY --from=base /opt/bitnami/redis/bin/redis-cli /opt/bitnami/redis/bin/redis-cli
 
 WORKDIR /rediskage
 
-ENV REDIS_PORT_NUMBER=6379 \
+ENV PATH="/opt/bitnami/redis/bin:$PATH" \
+    REDIS_PORT_NUMBER=6379 \
     END_POD_NUMBER=5 \
     REDIS_CLI_TIMEOUT=30 \
     REDIS_CLI_RETRIES=3 \
@@ -37,8 +40,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         toilet \
         figlet \
         ca-certificates && \
-    mkdir -p /usr/local/share/figlet && \
-    curl -o /usr/local/share/figlet/doh.flf https://raw.githubusercontent.com/xero/figlet-fonts/master/doh.flf && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd -r rediskage && useradd -r -g rediskage -d /rediskage -s /sbin/nologin rediskage && \

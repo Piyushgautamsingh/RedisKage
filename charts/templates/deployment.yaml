@@ -73,11 +73,11 @@ spec:
               value: "{{ .Values.rediskage.redis_cluster_healer.env.tls_crt }}"
             - name: REDIS_CLIENT_KEY
               value: "{{ .Values.rediskage.redis_cluster_healer.env.tls_key }}"
-            - name: RESIS_RECOVERY_SCRIPT_INTERVEL
+            - name: REDIS_RECOVERY_SCRIPT_INTERVEL
               value: "{{ .Values.rediskage.redis_cluster_healer.env.recovery_intervel }}"
-            - name: REDIS_ADDRS
+            - name: REDIS_HOST_ADDRS
               value: "{{.Values.rediskage.redis_cluster_healer.env.redis_host}}"
-            - name: REDIS_HEADLESS_ADDRS
+            - name: REDIS_HEADLESS_SVC_ADDRS
               value: "{{.Values.rediskage.redis_cluster_healer.env.redis_host}}"
           resources:
             {{- toYaml .Values.rediskage.redis_cluster_healer.resources | nindent 12 }}

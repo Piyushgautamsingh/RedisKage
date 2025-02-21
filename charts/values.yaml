@@ -25,7 +25,7 @@ rediskage:
       memory: 256Mi
   redis_cluster_healer:
     image:
-      repository: "docker.io/singhpiyushgautam/cluster-healer"
+      repository: "docker.io/singhpiyushgautam/redis-cluster-healer"
       tag: "v1.0.0"
       pullPolicy: IfNotPresent
     env:
