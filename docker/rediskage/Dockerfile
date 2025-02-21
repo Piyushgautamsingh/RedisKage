@@ -1,5 +1,8 @@
 FROM debian:bookworm-slim
 
+ARG VERSION
+ARG BUILD_DATE
+
 LABEL maintainer="Piyush Gautam" \
       org.opencontainers.image.name="Rediskage" \
       org.opencontainers.image.description="Rediskage is a reliable backup and restore application designed for Redis clusters." \

@@ -10,6 +10,7 @@ REDIS_TLS_ENABLED=${REDIS_TLS_ENABLED:-"yes"}
 REDIS_CA_CERT=${REDIS_CA_CERT:-""}
 REDIS_CLIENT_CERT=${REDIS_CLIENT_CERT:-""}
 REDIS_CLIENT_KEY=${REDIS_CLIENT_KEY:-""}
+REDIS_RECOVERY_SCRIPT_INTERVEL=${REDIS_RECOVERY_SCRIPT_INTERVEL:-60}
 REDIS_HOST_ADDRS=${REDIS_HOST_ADDRS:-"redis-cluster"}
 REDIS_HEADLESS_SVC_ADDRS=${REDIS_HEADLESS_SVC_ADDRS:-"redis-cluster-headless"}
 
@@ -236,8 +237,13 @@ assign_replicas() {
 }
 
 # Main script execution
-toilet -f doh -F metal "REDISKAGE"
-echo -e "https://github.com/Piyushgautamsingh/RedisKage"
+{
+  toilet -f bigascii12 -F border --filter crop:metal -w 100 "REDISKAGE"
+  echo -e "\n\t\t\t\tRepository: \e]8;;https://github.com/piyushgautamsingh/rediskage\ahttps://github.com/piyushgautamsingh/rediskage\e]8;;\a"
+  echo -e "\n"
+}
+
+
 
 while true; do
        log "Starting Redis cluster maintenance..."
@@ -255,5 +261,5 @@ while true; do
 
        assign_replicas
        log_success "Redis cluster maintenance completed."
-       sleep $RESIS_RECOVERY_SCRIPT_INTERVEL;
+       sleep $REDIS_RECOVERY_SCRIPT_INTERVEL;
 done
