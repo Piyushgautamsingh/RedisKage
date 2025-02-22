@@ -32,7 +32,6 @@ jobs:
       - name: Determine next version and create tag
         id: version
         run: |
-          set -x  # Enable debugging
           git describe --abbrev=0 --tags > /dev/null 2>&1 || FAILED=true
           if [ "${FAILED}" = true ]; then
             SEMVER_VERSION_ARGS="--first-release"
@@ -40,6 +39,8 @@ jobs:
             SEMVER_VERSION_ARGS="--release-as 1.0.0"
           fi
           npx standard-version ${SEMVER_VERSION_ARGS}
+          git push --follow-tags origin main
+          git fetch --tags --force
           SEMVER_TAG=$(git describe --tags --abbrev=0)
           echo "Next Tag: $SEMVER_TAG"
           echo "SEMVER_TAG=$SEMVER_TAG" >> $GITHUB_ENV
@@ -93,7 +94,7 @@ jobs:
           images: |
             singhpiyushgautam/${{ matrix.image.name }}
           tags: |
-            type=raw,value=${{ needs.create-tag-and-release.outputs.semver_tag }}
+            type=raw,value=${{ needs.create-tag-and-release.outputs.semver_tag || 'latest' }}
             type=raw,value=latest
           labels: |
             org.opencontainers.image.description=This is a Docker image for ${{ matrix.image.name }}.
