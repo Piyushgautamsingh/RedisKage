@@ -1,13 +1,16 @@
 name: Build, Test, Publish, and Tag Release
+
 on:
   push:
     branches: ["main"]
   pull_request:
     types: [closed]
+
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
   DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
 jobs:
   create-tag-and-release:
     name: Create Git Tag and Release
@@ -17,12 +20,14 @@ jobs:
       # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
+
       # Step 2: Set up Git configuration
       - name: Set up Git config
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git fetch --tags
+
       # Step 3: Determine the next version and create a tag
       - name: Determine next version and create tag
         id: version
@@ -38,6 +43,7 @@ jobs:
           SEMVER_TAG=$(git describe --tags --abbrev=0)
           echo "Next Tag: $SEMVER_TAG"
           echo "SEMVER_TAG=$SEMVER_TAG" >> $GITHUB_ENV
+
       # Step 4: Create a GitHub release
       - name: Create GitHub release
         run: |
@@ -46,6 +52,10 @@ jobs:
           else
             gh release create "$SEMVER_TAG" --target "$GITHUB_SHA"
           fi
+
+    outputs:
+      semver_tag: ${{ env.SEMVER_TAG }}
+
   build-and-publish:
     name: Build, Test, and Publish Docker Images
     runs-on: ubuntu-latest
@@ -61,17 +71,20 @@ jobs:
       # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
+
       # Step 2: Login to Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
       # Step 3: Set up Docker Buildx for multi-platform builds
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
         with:
           platforms: linux/amd64,linux/arm64
+
       # Step 4: Add metadata (README.md) to Docker image
       - name: Add metadata to Docker image
         id: metadata
@@ -80,23 +93,23 @@ jobs:
           images: |
             singhpiyushgautam/${{ matrix.image.name }}
           tags: |
-            type=raw,value=${{ env.SEMVER }}
+            type=raw,value=${{ needs.create-tag-and-release.outputs.semver_tag }}
             type=raw,value=latest
           labels: |
             org.opencontainers.image.description=This is a Docker image for ${{ matrix.image.name }}.
           readme-file: README.md
+
       # Step 5: Build, Test, and Push Docker Image for multiple platforms
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v2
         with:
           context: ${{ matrix.image.path }}
           platforms: linux/amd64,linux/arm64
-          tags: |
-            singhpiyushgautam/${{ matrix.image.name }}:${{ env.SEMVER_TAG }}
-            singhpiyushgautam/${{ matrix.image.name }}:latest
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |-
+          build-args: |
             BUILD_DATE=${{ steps.date.outputs.date }}
-            VERSION=${{ env.SEMVER_TAG }}
+            VERSION=${{ needs.create-tag-and-release.outputs.semver_tag }}
