@@ -20,6 +20,8 @@ jobs:
       # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 
 
       # Step 2: Set up Git configuration
       - name: Set up Git config
@@ -35,8 +37,6 @@ jobs:
           git describe --abbrev=0 --tags > /dev/null 2>&1 || FAILED=true
           if [ "${FAILED}" = true ]; then
             SEMVER_VERSION_ARGS="--first-release"
-          elif [ "$(printf "$(git describe --abbrev=0 --tags)" | awk -F[v.] '{print $2}')" = "0" ] && [ "$GITHUB_REF_NAME" == "${{ github.event.repository.default_branch }}" ]; then
-            SEMVER_VERSION_ARGS="--release-as 1.0.0"
           fi
           npx standard-version ${SEMVER_VERSION_ARGS}
           git push --follow-tags origin main
