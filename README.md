@@ -105,8 +105,3 @@ RedisKage provides real-time logs for all operations, including backups, uploads
 
 The Redis Cluster Healer is deployed as a sidecar container alongside RedisKage. While RedisKage handles backups and restores, the healer continuously ensures the health and stability of the Redis cluster.
 
----
-
-## License
-
-RedisKage is available under the [MIT License](LICENSE).
