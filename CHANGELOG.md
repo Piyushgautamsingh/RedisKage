@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.1](https://github.com/Piyushgautamsingh/RedisKage/compare/v1.1.0...v1.1.1) (2025-03-06)
+
+
+### Bug Fixes
+
+* **DEV-0010:** Updating the license ([c1f8f92](https://github.com/Piyushgautamsingh/RedisKage/commit/c1f8f92e3053336e3c9bca90a292bc2ae25465d7))
+
 ## [1.1.0](https://github.com/Piyushgautamsingh/RedisKage/compare/v1.0.0...v1.1.0) (2025-02-22)
 
 
