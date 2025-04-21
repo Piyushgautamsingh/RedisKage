@@ -236,14 +236,13 @@ assign_replicas() {
     return 0
 }
 
-# Main script execution
-{
-  toilet -f bigascii12 -F border --filter crop:metal -w 100 "REDISKAGE"
-  echo -e "\n\t\t\t\tRepository: \e]8;;https://github.com/piyushgautamsingh/rediskage\ahttps://github.com/piyushgautamsingh/rediskage\e]8;;\a"
-  echo -e "\n"
-}
-
-
+#Main script execution
+ascii_art=$(figlet -f big -w 100 "REDISKAGE" | awk '{print "\033[36m" $0 "\033[0m"}')
+border=$(printf '%*s\n' 100 | tr ' ' '#')
+echo "$border"
+echo "$ascii_art"
+echo "$border"
+echo "\n                                Repository: \033]8;;https://github.com/piyushgautamsingh/rediskage\ahttps://github.com/piyushgautamsingh/rediskage\033]8;;\a\n"
 
 while true; do
        log "Starting Redis cluster maintenance..."

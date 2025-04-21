@@ -11,7 +11,7 @@ LABEL maintainer="Piyush Gautam" \
       org.opencontainers.image.version="$VERSION" \
       org.opencontainers.image.created="$BUILD_DATE" \
       org.opencontainers.image.source="https://github.com/piyushgautamsingh/rediskage" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.licenses="Apache-2.0 license"
 
 COPY --from=base /opt/bitnami/scripts/ /opt/bitnami/scripts/
 COPY --from=base /opt/bitnami/redis/bin/redis-cli /opt/bitnami/redis/bin/redis-cli
