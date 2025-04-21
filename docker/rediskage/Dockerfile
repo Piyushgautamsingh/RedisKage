@@ -9,7 +9,7 @@ LABEL maintainer="Piyush Gautam" \
       org.opencontainers.image.version="$VERSION" \
       org.opencontainers.image.created="$BUILD_DATE" \
       org.opencontainers.image.source="https://github.com/piyushgautamsingh/rediskage" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.licenses="Apache-2.0 license"
 
 WORKDIR /rediskage
 
@@ -50,4 +50,4 @@ USER rediskage
 
 ENV PATH="/rediskage/venv/bin:$PATH"
 
-ENTRYPOINT ["python3", "/rediskage/scripts/key-backup.py"]
+ENTRYPOINT ["python3", "/rediskage/scripts/key_backup.py"]

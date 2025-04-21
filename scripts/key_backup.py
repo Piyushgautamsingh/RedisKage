@@ -7,8 +7,11 @@ from rediscluster import RedisCluster
 from retry import retry
 from redis.exceptions import ResponseError
 import pyfiglet
-import key-upload
-import key-restore
+import key_upload
+import key_restore
+import pyfiglet
+from termcolor import colored
+
 
 SCHEDULE_TIME = os.getenv('SCHEDULE_TIME')
 REDIS_NODES = os.getenv('REDIS_NODES')
@@ -47,6 +50,15 @@ def connect_to_redis():
         socket_keepalive=True
     )
     return rc
+
+def display_header():
+    ascii_art = pyfiglet.figlet_format("REDISKAGE", font="big", width=100)
+    colored_art = colored(ascii_art, "cyan")
+    border = "#" * 100
+    bordered_art = f"{border}\n{colored_art}{border}"
+    
+    print(bordered_art)
+    print("\n\t\t\t\tRepository: \033]8;;https://github.com/piyushgautamsingh/rediskage\ahttps://github.com/piyushgautamsingh/rediskage\033]8;;\a\n")
 
 def backup_keys(source_cluster, pattern, backup_dir):
     cursor = "0"
@@ -98,10 +110,8 @@ def get_keys_with_pattern():
         redis_cluster = connect_to_redis()
         for pattern in PATTERN_LIST:
             backup_keys(redis_cluster, pattern, BACKUP_DIR)
-        logger.info("Backup started for Nodes.conf file")
-        get_nodeconf.backup_node_conf()
-        upload_file.upload_to_s3(BACKUP_DIR)
-        put_keys.put_keys_to_redis()
+        key_upload.upload_to_s3(BACKUP_DIR)
+        key_restore.put_keys_to_redis()
     except Exception as e:
         logger.error(f"Error: {e}")
         raise
@@ -110,9 +120,9 @@ def get_keys_with_pattern():
             redis_cluster.close()
 
 if __name__ == "__main__":
-    ascii_art = pyfiglet.figlet_format("RedisKage",font="doh")
-    logging.info("\n" + ascii_art + "\nMain Repo: https://github.com/Piyushgautamsingh/RedisKage")
-    logger.info("Starting scheduler...")
+    display_header()
+    logging.info(colored("Rediskage positioning Redis cluster... Shadow Position Jutsu!", 'yellow'))
+    logging.info(colored("✓ Redis cluster positioned", 'green'))
     schedule.every(int(SCHEDULE_TIME)).seconds.do(get_keys_with_pattern)
     while True:
         schedule.run_pending()
