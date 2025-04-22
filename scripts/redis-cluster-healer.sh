@@ -240,9 +240,10 @@ assign_replicas() {
 ascii_art=$(figlet -f big -w 100 "REDISKAGE" | awk '{print "\033[36m" $0 "\033[0m"}')
 border=$(printf '%*s\n' 100 | tr ' ' '#')
 echo "$border"
-echo "$ascii_art"
+echo -e "$ascii_art"
 echo "$border"
-echo "\n                                Repository: \033]8;;https://github.com/piyushgautamsingh/rediskage\ahttps://github.com/piyushgautamsingh/rediskage\033]8;;\a\n"
+echo -e "\t\t\t\t\t\t\nRepository: \033]8;;https://github.com/piyushgautamsingh/rediskage\033\\https://github.com/piyushgautamsingh/rediskage\033]8;;\033\\"
+
 
 while true; do
        log "Starting Redis cluster maintenance..."
