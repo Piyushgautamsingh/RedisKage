@@ -121,8 +121,8 @@ def get_keys_with_pattern():
 
 if __name__ == "__main__":
     display_header()
-    logging.info(colored("Rediskage positioning Redis cluster... Shadow Position Jutsu!", 'yellow'))
-    logging.info(colored("✓ Redis cluster positioned", 'green'))
+    logging.info(colored("Rediskage possessing cluster... Shadow possession Jutsu!", 'yellow'))
+    logging.info(colored("✓ Redis cluster possessed", 'green'))
     schedule.every(int(SCHEDULE_TIME)).seconds.do(get_keys_with_pattern)
     while True:
         schedule.run_pending()
