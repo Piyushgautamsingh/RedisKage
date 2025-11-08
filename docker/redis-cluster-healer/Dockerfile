@@ -1,5 +1,3 @@
-FROM docker.io/bitnami/redis-cluster:7.4-debian-12 AS base
-
 FROM debian:bookworm-slim
 
 ARG VERSION
@@ -13,8 +11,8 @@ LABEL maintainer="Piyush Gautam" \
       org.opencontainers.image.source="https://github.com/piyushgautamsingh/rediskage" \
       org.opencontainers.image.licenses="Apache-2.0 license"
 
-COPY --from=base /opt/bitnami/scripts/ /opt/bitnami/scripts/
-COPY --from=base /opt/bitnami/redis/bin/redis-cli /opt/bitnami/redis/bin/redis-cli
+COPY ../../redis-scripts/ /opt/bitnami/scripts/
+COPY ../../redis-scripts/redis-cli /opt/bitnami/redis/bin/redis-cli
 
 WORKDIR /rediskage
 

@@ -41,6 +41,7 @@ RUN groupadd -r rediskage && useradd -r -g rediskage -d /rediskage -s /sbin/nolo
 COPY scripts/ /rediskage/scripts/
 
 RUN python3 -m venv /rediskage/venv && \
+    /rediskage/venv/bin/pip install --no-cache-dir pip==25.3 && \
     /rediskage/venv/bin/pip install --no-cache-dir -r /rediskage/scripts/requirements.txt && \
     chown -R rediskage:rediskage /rediskage
 
