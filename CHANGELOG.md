@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/Piyushgautamsingh/RedisKage/compare/v1.2.1...v1.3.0) (2025-11-08)
+
+
+### Features
+
+* **DEV-0011:** Rediskage Maintenance Release ([3d237c2](https://github.com/Piyushgautamsingh/RedisKage/commit/3d237c255b3ee1a6387049e7f285ed3bae211a3f))
+
 ### [1.2.1](https://github.com/Piyushgautamsingh/RedisKage/compare/v1.2.0...v1.2.1) (2025-04-22)
 
 
